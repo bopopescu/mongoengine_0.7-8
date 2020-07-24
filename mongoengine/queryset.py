@@ -107,7 +107,7 @@ class QueryTreeTransformerVisitor(QNodeVisitor):
         if combination.operation == combination.AND:
             # MongoDB doesn't allow us to have too many $or operations in our
             # queries, so the aim is to move the ORs up the tree to one
-            # 'master' $or. Firstly, we must find all the necessary parts (part
+            # 'main' $or. Firstly, we must find all the necessary parts (part
             # of an AND combination or just standard Q object), and store them
             # separately from the OR parts.
             or_groups = []
@@ -350,7 +350,7 @@ class QuerySet(object):
         self._snapshot = False
         self._timeout = True
         self._class_check = True
-        self._slave_okay = False
+        self._subordinate_okay = False
         self._iter = False
         self._scalar = []
 
@@ -373,7 +373,7 @@ class QuerySet(object):
 
         copy_props = ('_initial_query', '_query_obj', '_where_clause',
                     '_loaded_fields', '_ordering', '_snapshot',
-                    '_timeout', '_limit', '_skip', '_slave_okay', '_hint')
+                    '_timeout', '_limit', '_skip', '_subordinate_okay', '_hint')
 
         for prop in copy_props:
             val = getattr(self, prop)
@@ -407,7 +407,7 @@ class QuerySet(object):
         self._collection.ensure_index(fields, **index_spec)
         return self
 
-    def __call__(self, q_obj=None, class_check=True, slave_okay=False, **query):
+    def __call__(self, q_obj=None, class_check=True, subordinate_okay=False, **query):
         """Filter the selected documents by calling the
         :class:`~mongoengine.queryset.QuerySet` with a query.
 
@@ -417,7 +417,7 @@ class QuerySet(object):
             objects, only the last one will be used
         :param class_check: If set to False bypass class name check when
             querying collection
-        :param slave_okay: if True, allows this query to be run against a
+        :param subordinate_okay: if True, allows this query to be run against a
             replica secondary.
         :param query: Django-style query keyword arguments
         """
@@ -592,7 +592,7 @@ class QuerySet(object):
         cursor_args = {
             'snapshot': self._snapshot,
             'timeout': self._timeout,
-            'slave_okay': self._slave_okay
+            'subordinate_okay': self._subordinate_okay
         }
         if self._loaded_fields:
             cursor_args['fields'] = self._loaded_fields.as_dict()
@@ -1337,12 +1337,12 @@ class QuerySet(object):
         self._timeout = enabled
         return self
 
-    def slave_okay(self, enabled):
-        """Enable or disable the slave_okay when querying.
+    def subordinate_okay(self, enabled):
+        """Enable or disable the subordinate_okay when querying.
 
-        :param enabled: whether or not the slave_okay is enabled
+        :param enabled: whether or not the subordinate_okay is enabled
         """
-        self._slave_okay = enabled
+        self._subordinate_okay = enabled
         return self
 
     def delete(self, safe=False):
